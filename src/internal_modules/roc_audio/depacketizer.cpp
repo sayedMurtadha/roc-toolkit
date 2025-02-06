@@ -269,8 +269,10 @@ sample_t* Depacketizer::read_decoded_samples_(sample_t* buff_ptr, sample_t* buff
     }
 
     if (decoded_samples < requested_samples) {
-        payload_decoder_.end_frame();
+        const status::StatusCode status_code = payload_decoder_.end_frame();
         packet_ = NULL;
+        // TODO: what should be the flow in case of error?
+        roc_panic_if_not(status_code == status::StatusOK);
     }
 
     return (buff_ptr + decoded_samples * sample_spec_.num_channels());
@@ -387,8 +389,13 @@ status::StatusCode Depacketizer::fetch_packet_(size_t requested_samples,
 status::StatusCode Depacketizer::start_packet_() {
     roc_panic_if(!packet_);
 
-    payload_decoder_.begin_frame(packet_->stream_timestamp(), packet_->payload().data(),
-                                 packet_->payload().size());
+    status::StatusCode status_code = payload_decoder_.begin_frame(
+        packet_->stream_timestamp(), packet_->payload().data(),
+        packet_->payload().size());
+
+    if (status_code != status::StatusOK) {
+        return status_code;
+    }
 
     const packet::stream_timestamp_t pkt_begin = payload_decoder_.position();
     const packet::stream_timestamp_t pkt_end = pkt_begin + payload_decoder_.available();
@@ -409,10 +416,10 @@ status::StatusCode Depacketizer::start_packet_() {
         metrics_.late_samples += pkt_end - pkt_begin;
         metrics_.late_packets++;
 
-        payload_decoder_.end_frame();
+        status_code = payload_decoder_.end_frame();
         packet_ = NULL;
 
-        return status::StatusOK;
+        return status_code;
     }
 
     next_capture_ts_ = packet_->capture_timestamp();

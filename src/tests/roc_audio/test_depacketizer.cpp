@@ -77,12 +77,14 @@ packet::PacketPtr new_packet(IFrameEncoder& encoder,
         samples[n] = value;
     }
 
-    encoder.begin_frame(pp->rtp()->payload.data(), pp->rtp()->payload.size());
+    LONGS_EQUAL(
+        status::StatusOK,
+        encoder.begin_frame(pp->rtp()->payload.data(), pp->rtp()->payload.size()));
 
     UNSIGNED_LONGS_EQUAL(SamplesPerPacket,
                          encoder.write_samples(samples, SamplesPerPacket));
 
-    encoder.end_frame();
+    LONGS_EQUAL(status::StatusOK, encoder.end_frame());
 
     LONGS_EQUAL(status::StatusOK, rtp_composer.compose(*pp));
 
