@@ -55,8 +55,7 @@ PcmDecoder::begin_frame(packet::stream_timestamp_t frame_position,
     }
 
     if (frame_data_) {
-        roc_log(LogError, "pcm decoder: unpaired begin/end");
-        return status::StatusBadState;
+        roc_panic("pcm decoder: unpaired begin/end");
     }
 
     frame_data_ = frame_data;
@@ -71,8 +70,7 @@ PcmDecoder::begin_frame(packet::stream_timestamp_t frame_position,
 
 size_t PcmDecoder::read_samples(sample_t* samples, size_t n_samples) {
     if (!frame_data_) {
-        roc_log(LogError, "pcm decoder: read should be called only between begin/end");
-        return status::StatusBadState;
+        roc_panic("pcm decoder: read should be called only between begin/end");
     }
 
     if (n_samples > (size_t)stream_avail_) {
@@ -115,8 +113,7 @@ size_t PcmDecoder::drop_samples(size_t n_samples) {
 
 ROC_NODISCARD status::StatusCode PcmDecoder::end_frame() {
     if (!frame_data_) {
-        roc_log(LogError, "pcm decoder: unpaired begin/end");
-        return status::StatusBadState;
+        roc_panic("pcm decoder: unpaired begin/end");
     }
 
     stream_avail_ = 0;

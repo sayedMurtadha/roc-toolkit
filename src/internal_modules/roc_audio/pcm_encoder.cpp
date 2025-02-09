@@ -40,8 +40,7 @@ ROC_NODISCARD status::StatusCode PcmEncoder::begin_frame(void* frame_data,
     }
 
     if (frame_data_) {
-        roc_log(LogError, "pcm encoder: unpaired begin/end");
-        return status::StatusBadState;
+        roc_panic("pcm encoder: unpaired begin/end");
     }
 
     frame_data_ = frame_data;
@@ -71,8 +70,7 @@ size_t PcmEncoder::write_samples(const sample_t* samples, size_t n_samples) {
 
 ROC_NODISCARD status::StatusCode PcmEncoder::end_frame() {
     if (!frame_data_) {
-        roc_log(LogError, "pcm encoder: unpaired begin/end");
-        return status::StatusBadState;
+        roc_panic("pcm encoder: unpaired begin/end");
     }
 
     frame_data_ = NULL;
