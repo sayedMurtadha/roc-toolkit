@@ -194,6 +194,56 @@ private:
     status::StatusCode code_;
 };
 
+class MockEncoder : public IFrameEncoder {
+public:
+    explicit MockEncoder(IFrameEncoder& encoder, core::IArena& arena)
+        : IFrameEncoder(arena)
+        , encoder_(encoder)
+        , code_(status::NoStatus) {
+    }
+
+    virtual status::StatusCode init_status() const {
+        if (code_ != status::NoStatus && code_ != status::StatusOK) {
+            return code_;
+        }
+
+        return encoder_.init_status();
+    }
+
+    ROC_NODISCARD virtual status::StatusCode begin_frame(void* frame_data,
+                                                         size_t frame_size) {
+        if (code_ != status::NoStatus && code_ != status::StatusOK) {
+            return code_;
+        }
+
+        return encoder_.begin_frame(frame_data, frame_size);
+    }
+
+    ROC_NODISCARD virtual status::StatusCode end_frame() {
+        if (code_ != status::NoStatus && code_ != status::StatusOK) {
+            return code_;
+        }
+
+        return encoder_.end_frame();
+    }
+
+    virtual size_t encoded_byte_count(size_t n_samples) const {
+        return encoder_.encoded_byte_count(n_samples);
+    }
+
+    virtual size_t write_samples(const sample_t* samples, size_t n_samples) {
+        return encoder_.write_samples(samples, n_samples);
+    }
+
+    void set_status(status::StatusCode code) {
+        code_ = code;
+    }
+
+private:
+    IFrameEncoder& encoder_;
+    status::StatusCode code_;
+};
+
 } // namespace
 
 TEST_GROUP(packetizer) {};
@@ -426,6 +476,26 @@ TEST(packetizer, forward_error) {
     CHECK(frame);
 
     LONGS_EQUAL(status::StatusAbort, packetizer.write(*frame));
+}
+
+TEST(packetizer, forward_encoder_error) {
+    PcmEncoder encoder(packet_spec, arena);
+    MockEncoder mock_encoder(encoder, arena);
+
+    packet::FifoQueue packet_queue;
+
+    rtp::Identity identity;
+    rtp::Sequencer sequencer(identity, PayloadType);
+    Packetizer packetizer(packet_queue, rtp_composer, sequencer, mock_encoder,
+                          packet_factory, PacketDuration, frame_spec);
+    LONGS_EQUAL(status::StatusOK, packetizer.init_status());
+
+    FramePtr frame = new_frame(SamplesPerPacket);
+    CHECK(frame);
+
+    mock_encoder.set_status(status::StatusBadArg);
+
+    LONGS_EQUAL(status::StatusBadArg, packetizer.write(*frame));
 }
 
 } // namespace audio
