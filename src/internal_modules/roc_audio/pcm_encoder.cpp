@@ -33,7 +33,8 @@ size_t PcmEncoder::encoded_byte_count(size_t num_samples) const {
     return pcm_mapper_.output_byte_count(num_samples * n_chans_);
 }
 
-status::StatusCode PcmEncoder::begin_frame(void* frame_data, size_t frame_size) {
+ROC_NODISCARD status::StatusCode PcmEncoder::begin_frame(void* frame_data,
+                                                         size_t frame_size) {
     if (!frame_data) {
         return status::StatusBadArg;
     }
@@ -68,7 +69,7 @@ size_t PcmEncoder::write_samples(const sample_t* samples, size_t n_samples) {
     return n_mapped_samples;
 }
 
-status::StatusCode PcmEncoder::end_frame() {
+ROC_NODISCARD status::StatusCode PcmEncoder::end_frame() {
     if (!frame_data_) {
         roc_log(LogError, "pcm encoder: unpaired begin/end");
         return status::StatusBadState;
