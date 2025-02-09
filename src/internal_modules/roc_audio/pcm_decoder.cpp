@@ -46,9 +46,10 @@ size_t PcmDecoder::decoded_sample_count(const void* frame_data, size_t frame_siz
     return pcm_mapper_.input_sample_count(frame_size) / n_chans_;
 }
 
-status::StatusCode PcmDecoder::begin_frame(packet::stream_timestamp_t frame_position,
-                                           const void* frame_data,
-                                           size_t frame_size) {
+ROC_NODISCARD status::StatusCode
+PcmDecoder::begin_frame(packet::stream_timestamp_t frame_position,
+                        const void* frame_data,
+                        size_t frame_size) {
     if (!frame_data) {
         return status::StatusBadArg;
     }
@@ -112,7 +113,7 @@ size_t PcmDecoder::drop_samples(size_t n_samples) {
     return n_samples;
 }
 
-status::StatusCode PcmDecoder::end_frame() {
+ROC_NODISCARD status::StatusCode PcmDecoder::end_frame() {
     if (!frame_data_) {
         roc_log(LogError, "pcm decoder: unpaired begin/end");
         return status::StatusBadState;
